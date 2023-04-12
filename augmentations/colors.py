@@ -86,4 +86,7 @@ class Colors:
 
             augmented = cv2.addWeighted(augmented, alpha_c, augmented, 0, gamma_c)
 
-        return {'image': augmented}
+        output = {'image': augmented}
+        if kwargs.get('annotations') is not None:
+            output.update({'annotations': kwargs['annotations']})
+        return output

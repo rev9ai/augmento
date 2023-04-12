@@ -54,6 +54,8 @@ class Resizing:
         apply(**params)
         return self
 
+    # TODO: Add Zoom Augmentation with options like zoom randomly, center-only, corners-only
+
 
     def __call__(self, image: np.ndarray, annotations: Optional[np.ndarray] = None, **kwargs):
 
