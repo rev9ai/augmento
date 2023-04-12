@@ -54,7 +54,8 @@ You can also apply augmentations to annotations, if provided, by passing them as
 ```python
 # Load the image and annotations
 image = cv2.imread("image.jpg")
-annotations = load_annotations("annotations.json")
+bbox = [500, 1750, 3600, 2650]
+bbox_reshaped = np.array(bbox).reshape(-1, 2)
 
 # Create an instance of the Augmento class
 augmentor = Augmento()
@@ -65,14 +66,19 @@ augmentor.add(augmentation=Resizing.cropper())
 augmentor.add(augmentation=Rotations.rotate())
 
 # Apply the augmentations to the image and annotations
-augmented = augmentor(image, annotations)
+results = augmentor(image, bbox_reshaped)
 
 # Display the augmented image and annotations
-cv2.imshow("Augmented Image", augmented["image"])
-print(augmented["annotations"])
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+fig, plots = plt.subplots(1, 2, figsize=(12, 6))
+plots[1].set_title('Augmented')
+plots[1].imshow(results['image'])
+plots[1].axis('off')
+plots[0].set_title('Original')
+plots[0].imshow(image)
+plots[0].axis('off')
+plt.show()
 ```
+![Augmentation Example Image](files/example.png "Augmentation Example Image")
 
 ## Classes
 
