@@ -1,6 +1,6 @@
 
 
-from augmentations import Colors, Resizing, Rotations
+from augmentations import Colors, Resizing, Rotations, Flipper
 from typing import Union, Optional
 import numpy as np
 
@@ -25,13 +25,13 @@ class Augmento:
     def __init__(self):
         self.augmentations = list()
 
-    def add(self, augmentation: Union[Colors, Resizing, Rotations]) -> None:
+    def add(self, augmentation: Union[Colors, Resizing, Rotations, Flipper]) -> None:
         """
         Adds an augmentation to the pipeline of the Augmentation instance.
 
         Arguments:
-            augmentation (Union[Colors, Resizing, Rotations]): The augmentation to add. This can be an instance of the Colors,
-            Resizing, or Rotations classes.
+            augmentation (Union[Colors, Resizing, Rotations]): The augmentation to add. This can be an instance of the
+            Colors, Resizing, or Rotations classes.
 
         Returns:
             None
@@ -45,12 +45,12 @@ class Augmento:
 
         Args:
             image (np.ndarray): The image to apply augmentations to.
-            annotations (Optional[np.ndarray]): Optional annotations to apply augmentations to. If not provided, no annotations
-            will be returned.
+            annotations (Optional[np.ndarray]): Optional annotations to apply augmentations to. If not provided, no
+            annotations will be returned.
 
         Returns:
-            A dictionary containing the augmented image and annotations (if any) in the format {"image": image, "annotations":
-            annotations}.
+            A dictionary containing the augmented image and annotations (if any) in the format {"image": image,
+            "annotations": annotations}.
         """
 
         params = {'image': image.copy(),
@@ -58,10 +58,3 @@ class Augmento:
         for augmentation in self.augmentations:
             params = augmentation(**params)
         return params
-
-
-
-
-
-
-
