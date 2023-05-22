@@ -96,8 +96,11 @@ class Rotations:
             rotated_vectors = np.zeros(vectors.shape)
 
             for i, point in enumerate(vectors):
-                box_size = 5
-                box = [point[0], point[1], point[0]+box_size, point[1]+box_size]
+                if len(point) == 4:
+                    box = point
+                else:
+                    box_size = 5
+                    box = [point[0], point[1], point[0]+box_size, point[1]+box_size]
                 box_img = np.zeros(rotated_image.shape).astype('uint8')
                 box_img[box[1]:box[3] + 1, box[0]:box[2] + 1] = 255
 
@@ -109,7 +112,10 @@ class Rotations:
                 x1, x2 = np.min(np.argwhere(box_img == 255)[:, 1]), np.max(np.argwhere(box_img == 255)[:, 1])
                 y1, y2 = np.min(np.argwhere(box_img == 255)[:, 0]), np.max(np.argwhere(box_img == 255)[:, 0])
 
-                rotated_vectors[i] = [x1, y1]
+                if len(point) == 4:
+                    rotated_vectors[i] = [x1, y1, x2, y2]
+                else:
+                    rotated_vectors[i] = [x1, y1]
 
             rotated_vectors = rotated_vectors.round().astype(int)
             output['annotations'] = rotated_vectors
