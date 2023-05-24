@@ -53,7 +53,7 @@ class Colors:
         apply(**params)
         return self
 
-    def __call__(self, image: np.array, **kwargs):
+    def __call__(self, image: np.ndarray, **kwargs):
 
         """
         Apply image augmentation to an input image and return a dictionary containing the augmented image.

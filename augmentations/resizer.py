@@ -104,6 +104,12 @@ class Resizing:
         if annotations is not None:
 
             new_kp = annotations.copy()
+
+            box_format = False
+            if new_kp.shape[1] == 4:
+                box_format = True
+                new_kp = new_kp.reshape(-1, 2)
+
             new_kp[:, :2] = new_kp[:, :2] - crop_area
             new_kp[:, 0][new_kp[:, 0] < 0] = 0
             new_kp[:, 1][new_kp[:, 1] < 0] = 0
@@ -112,6 +118,9 @@ class Resizing:
 
             new_kp[:, 0] = new_kp[:, 0] + tw
             new_kp[:, 1] = new_kp[:, 1] + th
+
+            if box_format:
+                new_kp = new_kp.reshape(-1, 4)
 
             output['annotations'] = new_kp
 
