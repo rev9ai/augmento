@@ -33,7 +33,7 @@ class AffineTransformer:
                      max(0, h * self.scale - h)))
         pr = -w if pr == 0 else pr
         pb = -h if pb == 0 else pb
-        print(pl, pr, pt, pb)
+        
         image_no_padding = image[pt:-pb, pl:-pr]
         new_annotations = None
         if annotations is not None:
