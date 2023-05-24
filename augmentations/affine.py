@@ -35,8 +35,8 @@ class AffineTransformer:
         new_annotations = None
         if annotations is not None:
             new_annotations = annotations.copy()
-            new_annotations[:, :, 0] = annotations[:, :, 0] - pl
-            new_annotations[:, :, 1] = annotations[:, :, 1] - pt
+            new_annotations[:, 0] = annotations[:, 0] - pl
+            new_annotations[:, 1] = annotations[:, 1] - pt
         return image_no_padding, new_annotations
 
     def _get_affine_transformation(self, image, annotations):
@@ -61,24 +61,12 @@ class AffineTransformer:
         # transformed_annotations = annotations.copy()
         transformed_annotations = None
         if annotations is not None:
-            transformed_annotations = list()
-            # TODO: Replace For Loop with Matrix Operations
-            for bbox in annotations:
-                corners = np.float32([bbox[0],
-                                      [bbox[1, 0], bbox[0, 1]],
-                                      bbox[1],
-                                      [bbox[0, 0], bbox[1, 1]]])
-                transformed_corners = cv2.transform(np.array([corners]), matrix)[0]
-
-                # Calculate the new width and height of the bounding box
-                x, y, w, h = cv2.boundingRect(transformed_corners.astype(int))
-                transformed_bbox = np.array([[x, y], [x + w, y + h]])
-                h, w = image.shape[:2]
-                transformed_bbox[transformed_bbox[:, 0] > w, 0] = w - 1
-                transformed_bbox[transformed_bbox[:, 1] > h, 1] = h - 1
-                transformed_bbox[transformed_bbox < 0] = 0
-                transformed_annotations.append(transformed_bbox)
-            transformed_annotations = np.array(transformed_annotations)
+            transformed_annotations = np.array(annotations.copy())
+            transformed_annotations[:, 0] = (transformed_annotations[:, 0] * self.scale) + self.tx
+            transformed_annotations[:, 1] = (transformed_annotations[:, 1] * self.scale) + self.ty
+            transformed_annotations[transformed_annotations[:, 0] > w, 0] = w - 1
+            transformed_annotations[transformed_annotations[:, 1] > h, 1] = h - 1
+            transformed_annotations[transformed_annotations < 0] = 0
 
         return transformed_image, transformed_annotations
 
