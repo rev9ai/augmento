@@ -1,5 +1,8 @@
+
+
 import numpy as np
 import cv2
+from typing import Optional
 
 
 class AffineTransformer:
@@ -70,10 +73,25 @@ class AffineTransformer:
 
         return transformed_image, transformed_annotations
 
-    def __call__(self, image, annotations):
+    def __call__(self, image: np.ndarray, annotations: Optional[np.ndarray] = None, **kwargs):
 
         augmented_image, augmented_annotations = image.copy(), annotations.copy() if annotations is not None else None
+
+        box_format = False
+        if augmented_annotations is not None:
+            if augmented_annotations.shape[1] == 4:
+                box_format = True
+                augmented_annotations = augmented_annotations.reshape(-1, 2)
+
         for call in self.pipeline:
             augmented_image, augmented_annotations = call(augmented_image, augmented_annotations)
 
-        return {"image": augmented_image, "annotations": augmented_annotations}
+        output = {"image": augmented_image}
+        if augmented_annotations is not None:
+
+            if box_format:
+                augmented_annotations = augmented_annotations.reshape(-1, 4)
+
+            output['annotations'] = augmented_annotations
+
+        return output
