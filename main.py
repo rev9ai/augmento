@@ -1,6 +1,4 @@
-
-
-from augmentations import Colors, Resizing, Rotations, Flipper
+from augmentations import Colors, Resizing, Rotations, Flipper, AffineTransformer
 from typing import Union, Optional
 import numpy as np
 
@@ -25,7 +23,7 @@ class Augmento:
     def __init__(self):
         self.augmentations = list()
 
-    def add(self, augmentation: Union[Colors, Resizing, Rotations, Flipper]) -> None:
+    def add(self, augmentation: Union[Colors, Resizing, Rotations, Flipper, AffineTransformer]) -> None:
         """
         Adds an augmentation to the pipeline of the Augmentation instance.
 
@@ -34,6 +32,7 @@ class Augmento:
             Colors, Resizing, or Rotations classes.
 
         Returns:
+            object:
             None
         """
 
