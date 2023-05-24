@@ -35,8 +35,8 @@ class AffineTransformer:
         new_annotations = None
         if annotations is not None:
             new_annotations = annotations.copy()
-            new_annotations[:, 0] = annotations[:, 0] - pl
-            new_annotations[:, 1] = annotations[:, 1] - pt
+            new_annotations[:, :, 0] = annotations[:, :, 0] - pl
+            new_annotations[:, :, 1] = annotations[:, :, 1] - pt
         return image_no_padding, new_annotations
 
     def _get_affine_transformation(self, image, annotations):
@@ -71,7 +71,7 @@ class AffineTransformer:
                 transformed_corners = cv2.transform(np.array([corners]), matrix)[0]
 
                 # Calculate the new width and height of the bounding box
-                x, y, w, h = cv2.boundingRect(transformed_corners.astype(np.int))
+                x, y, w, h = cv2.boundingRect(transformed_corners.astype(int))
                 transformed_bbox = np.array([[x, y], [x + w, y + h]])
                 h, w = image.shape[:2]
                 transformed_bbox[transformed_bbox[:, 0] > w, 0] = w - 1
