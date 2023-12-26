@@ -1,1 +1,1 @@
-from main import Augmento
+from .main import Augmento
