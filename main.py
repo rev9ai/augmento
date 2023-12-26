@@ -1,4 +1,4 @@
-from augmentations import Colors, Resizing, Rotations, Flipper, AffineTransformer
+from .augmentations import Colors, Resizing, Rotations, Flipper, AffineTransformer
 from typing import Union, Optional
 import numpy as np
 
