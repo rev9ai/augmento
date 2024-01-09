@@ -3,7 +3,7 @@
 import numpy as np
 import cv2
 import random
-from typing import Optional
+from typing import Optional, List, Union
 
 class Rotations:
 
@@ -70,6 +70,72 @@ class Rotations:
 
         return rotated_image
 
+    def _rotate_p_about_c(self, point: List, angle: int, center_point: List):
+
+        """
+        Rotate point by a give angle about center_point
+
+        Arguments:
+            point (list): A point would be a list like of length 2 that needs to rotate
+            angle (int): The angle in degree to rotate the point.
+            center_point (list): Pivot point i.e. the point about which needs to rotate the point by given angle.
+        Returns:
+            list: Rotated point
+        """
+
+        angle_in_rad = np.deg2rad(angle)
+        sin_theta = np.sin(angle_in_rad)
+        cos_theta = np.cos(angle_in_rad)
+
+        a, b = center_point
+        x, y = point
+
+        x = x - a
+        y = y - b
+
+        x_prime = round(x * cos_theta - y * sin_theta + a)
+        y_prime = round(x * sin_theta + y * cos_theta + b)
+
+        return [x_prime, y_prime]
+
+    def _box_to_polygon(self, bboxes: Union[List[List], np.ndarray]):
+        """
+        Convert list of bounding boxes into list of polygons coordinates. For each bounding box, it will generate polygon coordinates.
+        Arguments:
+            bboxes (list or np.ndarray): A list or numpy array of bounding boxes. Each bounding box should follow a format [x1, y1, x2, y2]. Polygon coordinates will be generated for each boudning box.
+        Returns:
+            np.ndarray: A numpy array will be returned that will contain the polygon coordinates for each respective bounding box.
+        """
+        polygons = list()
+        for box in bboxes:
+            x1, y1, x2, y2 = box
+            polygons.append([
+                [x1, y1],
+                [x2, y1],
+                [x1, y2],
+                [x2, y2]
+            ])
+        return np.array(polygons)
+
+    def _polygon_to_box(self, polygons: Union[List[List[List]], np.ndarray]):
+
+        """
+        Convert list of polygons coordinates into list of bounding boxes. For each polygon coordinates array, it will generate a bounding box.
+        Arguments:
+            polygons (list or np.ndarray): A list or numpy array containing bounding boxes' polygon coordinates. Each polygon coordinates array should contain the polygon coordinates of a bounding box. An array of bounding boxes will be generated.
+        Returns:
+            np.ndarray: A numpy array will be returned that will contain the bounding boxes for each respective polygon coordinates array.
+        """
+
+        bboxes = list()
+        for polygon in polygons:
+            x1 = min(p[0] for p in polygon)
+            y1 = min(p[1] for p in polygon)
+            x2 = max(p[0] for p in polygon)
+            y2 = max(p[1] for p in polygon)
+            bboxes.append([x1, y1, x2, y2])
+        return np.array(bboxes)
+
 
     def __call__(self, image: np.array, annotations: Optional[np.ndarray] = None, **kwargs):
 
@@ -92,33 +158,34 @@ class Rotations:
 
         if annotations is not None:
 
-            vectors = annotations.copy()
-            rotated_vectors = np.zeros(vectors.shape)
+            h, w, _ = image.shape
+            a, b = w / 2, h / 2
+            if annotations.shape[1] == 4:
+                polygons = self._box_to_polygon(annotations)
+                rotated_polygons = [
+                    [
+                        self._rotate_p_about_c((x, y), - self.angle, (a, b)) \
+                        for (x, y) in pol] for pol in polygons
+                ]
+                rotated_annotations = self._polygon_to_box(rotated_polygons)
 
-            for i, point in enumerate(vectors):
-                if len(point) == 4:
-                    box = point
-                else:
-                    box_size = 5
-                    box = [point[0], point[1], point[0]+box_size, point[1]+box_size]
-                box_img = np.zeros(rotated_image.shape).astype('uint8')
-                box_img[box[1]:box[3] + 1, box[0]:box[2] + 1] = 255
+                rotated_annotations[rotated_annotations[:, 0] > w, 0] = w - 1
+                rotated_annotations[rotated_annotations[:, 2] > w, 2] = w - 1
+                rotated_annotations[rotated_annotations[:, 1] > h, 1] = h - 1
+                rotated_annotations[rotated_annotations[:, 3] > h, 3] = h - 1
+                rotated_annotations[rotated_annotations < 0] = 0
+            else:
+                rotated_annotations = [
+                    self._rotate_p_about_c((x, y), - self.angle, (a, b)) \
+                    for (x, y) in annotations[:, :2]
+                ]
+                rotated_annotations = np.array(rotated_annotations)
 
-                box_img = self._rotate_image(box_img, angle=self.angle)
+                rotated_annotations[rotated_annotations[:, 0] > w, 0] = w - 1
+                rotated_annotations[rotated_annotations[:, 1] > h, 1] = h - 1
+                rotated_annotations[rotated_annotations < 0] = 0
 
-                if len(np.argwhere(box_img == 255)) == 0:
-                    continue
-
-                x1, x2 = np.min(np.argwhere(box_img == 255)[:, 1]), np.max(np.argwhere(box_img == 255)[:, 1])
-                y1, y2 = np.min(np.argwhere(box_img == 255)[:, 0]), np.max(np.argwhere(box_img == 255)[:, 0])
-
-                if len(point) == 4:
-                    rotated_vectors[i] = [x1, y1, x2, y2]
-                else:
-                    rotated_vectors[i] = [x1, y1]
-
-            rotated_vectors = rotated_vectors.round().astype(int)
-            output['annotations'] = rotated_vectors
+            output['annotations'] = rotated_annotations
 
         return output
 
