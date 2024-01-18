@@ -18,7 +18,7 @@ This will download and install the latest version of Augmento and its dependenci
 
 ## Usage
 
-To use the `augmento` library, first, you need to install it using pip or any other package manager. After installation, you can import the `Augmento` class and the desired augmentation classes from the `augmento.augmentations` module.
+After installation, you can import the `Augmento` class and the desired augmentation classes from the `augmento.augmentations` module.
 
 Here's an example of how to use the `Augmento` class to apply multiple augmentations to an image:
 
@@ -47,15 +47,21 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 ```
 
-In the above example, we first loaded an image using OpenCV's `imread()` function. Then we created an instance of the `Augmento` class and added three augmentations to the pipeline using the `add()` method. Finally, we applied the augmentations to the image using the `__call__()` method of the `Augmento` class and displayed the augmented image using OpenCV's `imshow()` function.
+In the above example, we first loaded an image using OpenCV's `imread()` function. Then we created an instance of the `Augmento` class and added three augmentations to the pipeline using the `add()` method. Finally, we applied the augmentations to the image by calling `augmentor` and displayed the augmented image using OpenCV's `imshow()` function.
 
-You can also apply augmentations to annotations, if provided, by passing them as an additional argument to the `__call__()` method:
+You can also apply augmentations to annotations, if provided, by passing them as an additional argument `annotations` in both formats i.e. bounding boxes or points. For bounding boxes, the shape of annotations should be `(n, 4)` with each bounding box as `[x1, y1, x2, y2]` and `(n, 2)` for key-points annotations with each point as `[x1, y1]` where `n` represents number of annotations in an image. 
 
 ```python
+from augmento.augmentations import Colors, Resizing, Rotations
+from augmento import Augmento
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 # Load the image and annotations
 image = cv2.imread("image.jpg")
-bbox = [500, 1750, 3600, 2650]
-bbox_reshaped = np.array(bbox).reshape(-1, 2)
+bboxes = [[500, 1750, 3600, 2650]]
 
 # Create an instance of the Augmento class
 augmentor = Augmento()
@@ -66,7 +72,7 @@ augmentor.add(augmentation=Resizing.cropper())
 augmentor.add(augmentation=Rotations.rotate())
 
 # Apply the augmentations to the image and annotations
-results = augmentor(image, bbox_reshaped)
+results = augmentor(image, bboxes)
 
 # Display the augmented image and annotations
 fig, plots = plt.subplots(1, 2, figsize=(12, 6))
@@ -80,86 +86,170 @@ plt.show()
 ```
 ![Augmentation Example Image](files/example.png "Augmentation Example Image")
 
-## Classes
+## Docs
 
-### `Augmento` class
+### Augmento
 
-The `Augmento` class is the main class of the `augmento` library, which is used for image augmentation. It accepts a list of augmentation objects that apply various image transformations to the input image.
+> Import as `from augmento import Augmento`
 
-#### `__init__(self)` method
+The `Augmento` object is the main object of the `augmento` library, which will be used as an image augmentation generator. It accepts a list of augmentation objects and then apply all those augmentations to the input images and annotations by calling it. It could generate a unique image every time based on settings of added augmentations. 
 
-The `__init__` method initializes the `Augmento` class and creates an empty list for storing the augmentations. It does not accept any arguments.
+#### Methods
 
-#### `add(self, augmentation)` method
+1. `add(augmentation)`
 
-The `add` method is used to add an augmentation to the list of augmentations to apply. It accepts a single argument, which is an instance of an augmentation class such as `Colors.jitter()`, `Resizing.cropper({})`, or `Rotations.rotate({})`.
+    The `add` method is used to add an augmentation to the `Augmento` generator. It accepts a single argument, which is an instance of an augmentation class such as `Colors.jitter()`, `Resizing.cropper({})`, `Rotations.rotate({})`, etc.
+#### Call Augmento Object
 
-#### `__call__(self, image, annotations=None)` method
-
-The `__call__` method is the main method of the `Augmento` class that applies the list of augmentations to the input image. It accepts two arguments:
+To apply the augmentations added in the `Augmento` generator, simply call the generator and it will apply the whole list of augmentations to the input image. It accepts two arguments:
 
 - `image`: The input image to be augmented. The image should be a NumPy array with dimensions `(height, width, channels)`.
-- `annotations`: Optional. A 2D array of annotations in the shape of `x,y,score`. This can be used to update the annotations if they change due to an augmentation.
+- `annotations` _(Optional)_: A 2D array of annotations in either bounding boxes or key-points format. For bounding boxes, the shape of annotations should be `(n, 4)` with each bounding box as `[x1, y1, x2, y2]` and `(n, 2)` for key-points annotations with each point as `[x1, y1]` where `n` represents the number of annotations in an image.
 
 The method returns a dictionary with the following keys:
 
 - `'image'`: The augmented image as a NumPy array with dimensions `(height, width, channels)`.
-- `'annotations'`: The updated annotations (if any) as a dictionary. If annotations were not passed as an argument, then the value of this key will be `None`.
+- `'annotations'`: The augmented annotations (if any) as a numpy array.
 
-### `Colors` class
 
-The `Colors` class provides image color augmentation techniques.
+### Augmentations
 
-#### `jitter(params={})` method
+#### Colors
 
-The `jitter` method create color jittering augmentation.
+> import as `from augmento.augmentations import Colors`
 
-**Arguments:**
+The `Colors` provides image color augmentation techniques.
 
-- `params`
+1. `jitter(params={})`
 
-   (dict): A dictionary of parameters for the image augmentation. The following key-value pairs are accepted:
+    The `jitter` method create color jittering augmentation.
 
-  - `distribution` (str, default='normal'): The type of distribution to use for generating the augmentation values.
-  - `add_brightness` (bool, default=True): Whether or not to add brightness augmentation.
-  - `brightness_range` (int, default=50): The range of brightness values to use for augmentation.
-  - `brightness_value` (int, default=None): A specific brightness value to use for augmentation. If `None`, then a random value within the range will be chosen.
-  - `add_contrast` (bool, default=True): Whether or not to add contrast augmentation.
-  - `contrast_range` (int, default=20): The range of contrast values to use for augmentation.
-  - `contrast_value` (float, default=None): A specific contrast value to use for augmentation. If `None`, then a random value within the range will be chosen.
+    **Arguments:**
+    
+    - `params` _(dict)_: A dictionary of parameters for the colors jittering augmentation. The following key-value pairs are accepted:
+      - `distribution` _(str, default='normal')_: The type of distribution to use for generating the augmentation values.
+      - `add_brightness` _(bool, default=True)_: Whether or not to add brightness augmentation.
+      - `brightness_range` _(int, default=50)_: The range of brightness values to use for augmentation.
+      - `brightness_value` _(int, default=None)_: A fixed brightness value to use for augmentation. If `None`, then a random value within the range will be chosen.
+      - `add_contrast` _(bool, default=True)_: Whether or not to add contrast augmentation.
+      - `contrast_range` _(int, default=20)_: The range of contrast values to use for augmentation.
+      - `contrast_value` _(float, default=None)_: A fixed contrast value to use for augmentation. If `None`, then a random value within the range will be chosen.
+    
+    **Returns:**
+    
+    An instance of the Colors jittering augmentation.
 
-**Returns:**
+#### Resizing
 
-An instance of the `Colors` jittering augmentation class.
+> import as `from augmento.augmentations import Resizing`
 
-### `Resizing` class
+It provides augmentations for image resizing including following:
 
-#### `cropper(params={})` method
+1. `cropper(params={})`
 
-Create a cropping augmentation for an input image.
+    Create a cropping augmentation for an input image.
+    
+    **Arguments**:
+    
+    - `params`
+    
+       (dict): A dictionary of parameters for the image cropping. The following key-value pairs are accepted:
+    
+      - `background` (str, default=None): The path to the background image to use for cropped area. It will work with `keep_within_size=True` and set the specified background for the cropped area.
+      - `keep_within_size` (bool, default=True): Whether to keep the output image within the same size as the input image.
+      - `cropping_value` (int, default=None): The amount of cropping to apply to the input image. If `None`, then a random cropping value will be set selected from a random normal distribution in the range of 0-360.
+    
+    **Returns**: 
+      
+    An instance of the `cropper` augmentation class.
 
-Arguments:
+#### Rotations
 
-- `params`
+> import as `from augmento.augmentations import Rotations`
 
-   (dict): A dictionary of parameters for the image cropping. The following key-value pairs are accepted:
+1. `rotate(params={})`:
 
-  - `background` (str, default=None): The path to the background image to use for cropped area. It will work with `keep_within_size=True` and set the specified background for the cropped area.
-  - `keep_within_size` (bool, default=True): Whether to keep the output image within the same size as the input image.
-  - `cropping_value` (int, default=None): The amount of cropping to apply to the input image. If `None`, then a random cropping value will be set selected from a random normal distribution in the range of 0-360.
+   The `rotate` method creates a rotation augmentation for an input image. 
+   
+   **Arguments**:
+   
+   - `params`
+    
+       (dict): A dictionary of parameters for the image rotation. The following key-value pairs are accepted:
+   
+      - `angle` (int, default=None): The angle of rotation in degrees. If None, a random angle between -25 and 25 degrees will be selected.
+      - `random_bg` (bool, default=False): Whether to fill the background of the rotated image with a random color.
+   
+   **Returns**: 
 
-Returns: An instance of the `cropper` augmentation class.
+   The `rotate` method returns an instance of the rotation augmentation class, which can be added to an instance of the `Augmento` class for augmenting an image.
 
-### `Rotations` class
 
-#### `rotate(params={})` method
+#### Flipper
 
-The `rotate` method creates a rotation augmentation for an input image. It accepts a dictionary of parameters for the rotation configurations. The following key-value pairs are accepted:
+> import as `from augmento.augmentations import Flipper`
 
-- `angle` (int, default=None): The angle of rotation in degrees. If None, a random angle between -25 and 25 degrees will be selected.
-- `random_bg` (bool, default=False): Whether to fill the background of the rotated image with a random color.
+1. `horizontal_flip(prob)`:
 
-The `rotate` method returns an instance of the rotation augmentation class, which can be added to an instance of the `Augmento` class for augmenting an image.
+   The `horizontal_flip` method creates a horizontal flipping augmentation for an input image. 
+   
+   **Arguments**:
+   
+   - `prob`
+    
+       (float): A value between 0 and 1 for the probability of applying this augmentation. Default value is `1.0` that means it will apply flipping augmentation to each image.
+   
+   **Returns**: 
+
+   The `horizontal_flip` method returns an instance of the horizontal flipping augmentation class.
+2. `vertical_flip(prob)`:
+
+   The `vertical_flip` method creates a vertical flipping augmentation for an input image. 
+   
+   **Arguments**:
+   
+   - `prob`
+    
+       (float): A value between 0 and 1 for the probability of applying this augmentation. Default value is `1.0` that means it will apply flipping augmentation to each image.
+   
+   **Returns**: 
+
+   The `vertical_flip` method returns an instance of the vertical flipping augmentation class.
+
+
+#### AffineTransformer
+
+> import as `from augmento.augmentations import AffineTransformer`
+
+1. `with_padding(scale_range, shift_range)`:
+
+   The `with_padding` method creates an affine transformation augmentation with keeping the padding area in the canvas for an input image. 
+   
+   **Arguments**:
+   
+   - `scale_range`
+
+     (tuple): Range for image scaling. Default is `(0.8, 1.2)` i.e. the augmentation will select any random value between this range for scaling image.
+   - `shift_range`: Range for image shifting inside the canvas. Default value is `(-0.1, 0.1)` i.e. the augmentation will select any random value between this range and move the image accordingly. 
+   
+   **Returns**: 
+
+   The `with_padding` method returns an instance of the affine transformation augmentation class.
+
+2. `without_padding(scale_range, shift_range)`:
+
+   The `without_padding` method creates an affine transformation augmentation and remove the padding area. In other words, it will enable the scaling+cropping behaviour and every image generated by this augmentation could be in different image sizes. 
+   
+   **Arguments**:
+   
+   - `scale_range`
+
+     (tuple): Range for image scaling. Default is `(0.8, 1.2)` i.e. the augmentation will select any random value between this range for scaling image.
+   - `shift_range`: Range for image shifting inside the canvas. Default value is `(-0.1, 0.1)` i.e. the augmentation will select any random value between this range and move the image accordingly. 
+   
+   **Returns**: 
+
+   The `without_padding` method returns an instance of the affine transformation augmentation class.
 
 ## Examples
 
@@ -197,36 +287,11 @@ augmentor.add(augmentation=Colors.jitter())
 augmentor.add(augmentation=Rotations.rotate(params={'angle': 45}))
 ```
 
-Now, we can apply the augmentations to the image and annotations using the `__call__` method of the `Augmento` class:
+Now, we can apply the augmentations to the image and annotations
 
 ```python
 # Apply the augmentations
 augmented = augmentor(image, annotations)
-```
-
-### Augmentations for Bounding Boxes
-
-If the annotations are in the format of `x1,y1,x2,y2` bounding boxes, we need to reshape them to `x,y` format:
-
-```python
-# Reshape annotations from (n, 4) to (2n, 2)
-annotations = annotations.reshape(-1, 2)
-
-# Apply the augmentations
-augmented = augmentor(image, annotations)
-
-# Reshape annotations back to (n, 4)
-annotations = annotations.reshape(-1, 4)
-```
-
-Finally, we can save the augmented image and annotations to disk:
-
-```python
-# Save the augmented image
-cv2.imwrite('path/to/augmented_image.jpg', augmented['image'])
-
-# Save the augmented annotations
-np.save('path/to/augmented_annotations.npy', augmented['annotations'])
 ```
 
 That's it! You have successfully applied color jittering and rotation augmentation to an image with annotations using the `augmento` library.
